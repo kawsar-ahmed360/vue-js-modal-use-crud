@@ -1,0 +1,260 @@
+<template>
+  <div>
+    <div class="row">
+      <div class="col-md-2"></div>
+      <div class="col-md-8">
+        <div class="card">
+        <div class="card-body">
+            <h3 style="text-align:center;text-decoration:underline">Category Manage</h3>
+            <button type="submit" style="float:right" class="btn btn-primary btn-sm" data-toggle="modal" data-target="#exampleModal" @click.prevent="showModal"><i class="fas fa-plus-circle"></i>Add Category</button>
+       
+    
+        <v-client-table :data="items" :columns="columns" >
+        <!-- <v-client-table :data="items" :columns="['id', 'name' ,'age', 'DeleteCategory']" > -->
+            <!-- <button  slot-scope="props" class="btn btn-danger"  @click="DeleteCategory(props.row.id)"> <i class="fa fa-trash"></i>  </button>
+            
+            <a  slot-scope="props" @click="editCategory(props.row)"><i class="fa fa-edit"></i></a>
+             -->
+
+             <template slot="action" slot-scope="props">
+             
+              <button  class="btn btn-danger"  @click="DeleteCategory(props.row.id)"> <i class="fa fa-trash"></i>  </button>
+               <a class="btn btn-success btn-sm" @click="editCategory(props.row)"><i class="fa fa-edit"></i></a>
+            
+            </template>
+
+
+            </v-client-table>
+
+            
+
+      
+        </div>
+        </div>
+      </div>
+      <div class="col-md-2"></div>
+    </div>
+
+
+
+    <!-- Modal containing dynamic form for adding/updating user details. -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true"> 
+      <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <!-- Show/hide headings dynamically based on /isFormCreateUserMode value (true/false) -->
+            <h5 v-show="isFormCreateUserMode" class="modal-title" id="exampleModalLabel">Add Category</h5>
+            <h5 v-show="!isFormCreateUserMode" class="modal-title" id="exampleModalLabel">Update Category</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">×</span>
+            </button>
+          </div>
+          <!-- Form for adding/updating user details. When submitted call /createUser() function if /isFormCreateUserMode value is true. Otherwise call /updateUser() function. -->
+          <form @submit.prevent="isFormCreateUserMode ? createCategory() : updateCategory()">
+            <div class="modal-body">
+                
+              <div class="form-group">
+                <input v-model="form.name" type="text" name="name" placeholder="Name" 
+                  class="form-control" >
+                 <div style="color:red" v-if="form.errors.has('name')" v-html="form.errors.get('name')" />
+              </div>
+              
+           
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-dismiss="modal" @click="removeModal">Close</button>
+              <button type="submit" class="btn btn-primary" v-show="isFormCreateUserMode">Save changes</button>
+              <button type="submit" class="btn btn-primary" v-show="!isFormCreateUserMode">Update</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div> 
+
+
+
+  </div>
+
+
+
+</template>
+
+
+<style lang="">
+    
+</style>
+
+
+<script>
+export default {
+
+
+      mounted() {
+        this.GetCategorys();
+      },
+    
+        metaInfo() {
+        return { 
+
+
+            title: "Add Category",
+            meta: [
+                { name: 'description', content:  'Add Category Page why count this page'},
+                { property: 'og:title', content: "Epiloge - Build your network in your field of interest"},
+                { property: 'og:site_name', content: 'Epiloge'},
+                {property: 'og:type', content: 'website'},    
+                {name: 'robots', content: 'index,follow'} 
+            ]
+        }
+    },
+
+    data() {
+        return {
+            items: [],
+       columns: ['id', 'name','action'],
+     
+
+              // AllCategorys:[],
+              selected:[],
+              selectedAll:false,
+              CheckboxDisable:false,
+               form: new Form({
+                   id:"",
+                  name:"",
+                
+               }),
+
+            isFormCreateUserMode:true
+        }
+    },
+
+
+    watch:{
+
+     selected(selected){
+
+      this.selectedAll = (this.AllCategorys.length==selected.length);
+   
+  
+     }
+    },
+
+    methods: {
+
+      
+      selectAll(event){
+        if(event.target.checked==false){
+          this.selected=[];
+        }else{
+          this.AllCategorys.forEach((category)=>{
+             this.selected.push(category.id);
+          })
+        }
+      },
+      //..............Category Create Method.....
+        createCategory(){
+        this.form.post('/admin/category-store',this.form)
+        .then((result) => {
+           this.GetCategorys();
+           this.ToastrSuccess('Successfully Saved','success');
+            $('#exampleModal').modal('hide'); // hide modal
+            
+        }).catch((err) => {
+            
+        });
+        },
+
+
+          //..............Category Update Method.....
+         updateCategory(){
+          this.form.post('/admin/category-update',this.form)
+           .then((result) => {
+              this.GetCategorys();
+              $('#exampleModal').modal('hide'); // hide modal
+              // sweet alert 2
+               this.ToastrSuccess('Successfully Updated','success');
+            
+        }).catch((err) => {
+            
+        });
+
+        },
+
+     //..............Category Edit Method.....
+      editCategory(user){
+        this.isFormCreateUserMode = false;
+        this.form.reset(); // v form reset inputs
+        this.form.clear(); // v form clear errors
+        $('#exampleModal').modal('show'); // show modal
+        this.form.fill(user);
+      },
+
+      //..............Category Delete Method.....
+
+        DeleteCategory(categoryId){
+
+         console.log(categoryId);
+
+         axios.get('/admin/category-delete/'+categoryId)
+            .then((result) => {
+
+           this.GetCategorys();   
+           this.ToastrSuccess('Successfully Deleted','success');
+                
+            }).catch((err) => {
+                
+            });
+        },
+
+      //..............Category Modal Show Method.....
+        showModal(){
+        this.isFormCreateUserMode = true;
+        this.form.reset(); // v form reset
+        $('#exampleModal').modal('show'); // show modal
+
+        },
+         //..............Category Modal Remove Method.....
+        removeModal(){
+            $('#exampleModal').modal('hide');  
+        },
+      //..............Category Show Method.....
+        GetCategorys(){
+            axios.get('/admin/category-list')
+            .then((result) => {
+              // this.AllCategorys=result.data['category'];
+
+               this.items = result.data['category'];
+                
+            }).catch((err) => {
+                
+            });
+        },
+
+
+    
+
+      //..............Toastr Message Root.....
+        ToastrSuccess(SuccessMessage,Status){
+           const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.addEventListener('mouseenter', Swal.stopTimer)
+                    toast.addEventListener('mouseleave', Swal.resumeTimer)
+                }
+                })
+
+                Toast.fire({
+                icon: Status,
+                title: SuccessMessage,
+                })
+        }
+        
+    },
+
+
+}
+</script>
